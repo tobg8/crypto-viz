@@ -3,7 +3,8 @@ module github.com/tobg8/crypto-viz
 go 1.18
 
 require (
-	github.com/go-co-op/gocron v1.33.0
+	github.com/confluentinc/confluent-kafka-go v1.9.2
+	github.com/go-co-op/gocron v1.33.1
 	github.com/gocolly/colly v1.2.0
 	github.com/stretchr/testify v1.8.2
 	gotest.tools v2.2.0+incompatible
@@ -18,9 +19,10 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/golang/protobuf v1.4.2 // indirect
-	github.com/google/go-cmp v0.4.0 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/uuid v1.3.1 // indirect
+	github.com/joho/godotenv v1.5.1 // direct
 	github.com/kennygrant/sanitize v1.2.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -32,6 +34,6 @@ require (
 	golang.org/x/net v0.14.0 // indirect
 	golang.org/x/text v0.12.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.24.0 // indirect
+	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

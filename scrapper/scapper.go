@@ -6,6 +6,7 @@ import (
 	"github.com/gocolly/colly"
 )
 
+// Currency represents a currency model
 type Currency struct {
 	ID            string
 	Name          string
@@ -18,6 +19,7 @@ type Currency struct {
 	MarketCapital string
 }
 
+// NewCurrency represents a Newcurrency model
 type NewCurrency struct {
 	Name        string
 	Acronym     string
@@ -53,13 +55,13 @@ func ScrapCurrencies(url string) ([]Currency, error) {
 				ID:            el.ChildText("td:nth-child(2)"),
 				Name:          el.ChildText("td:nth-child(3) span:first-child"),
 				Acronym:       el.ChildText("td:nth-child(3) span:nth-child(2)"),
-				Variation1h:   el.ChildText("td:nth-child(4)"),
-				Variation1d:   el.ChildText("td:nth-child(5)"),
-				Variation1w:   el.ChildText("td:nth-child(6)"),
-				Volume:        el.ChildText("td:nth-child(7)"),
-				MarketCapital: el.ChildText("td:nth-child(8)"),
+				Cours:         el.ChildText("td:nth-child(4)"),
+				Variation1h:   el.ChildText("td:nth-child(5)"),
+				Variation1d:   el.ChildText("td:nth-child(6)"),
+				Variation1w:   el.ChildText("td:nth-child(7)"),
+				Volume:        el.ChildText("td:nth-child(8)"),
+				MarketCapital: el.ChildText("td:nth-child(9)"),
 			}
-
 			currencies = append(currencies, currency)
 		})
 
@@ -82,6 +84,7 @@ func ScrapCurrencies(url string) ([]Currency, error) {
 	return currencies, nil
 }
 
+// ScrapNewCurrenciesscraps currency information from newly trending crypto currencies.
 func ScrapNewCurrencies(url string) ([]NewCurrency, error) {
 	c := colly.NewCollector()
 	c.UserAgent = "Go scrapping"
