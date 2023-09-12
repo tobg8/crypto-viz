@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-co-op/gocron"
 	"github.com/joho/godotenv"
-	"github.com/tobg8/crypto-viz/kafkaclient"
+	"github.com/tobg8/crypto-viz/producer"
 	"github.com/tobg8/crypto-viz/scrapper"
 )
 
@@ -25,7 +25,7 @@ func Init() {
 	// init Consumer
 
 	// init producer
-	kafkaClient, err := kafkaclient.CreateProducer()
+	kafkaClient, err := producer.CreateProducer()
 	if err != nil {
 		log.Print(err)
 	}
@@ -39,7 +39,7 @@ func Init() {
 }
 
 // Scrap scraps currencies variations about top 100 crypto currencies.
-func Scrap(kc *kafkaclient.KafkaClient) error {
+func Scrap(kc *producer.KafkaClient) error {
 	currencies, err := scrapper.ScrapCurrencies("https://www.coingecko.com/fr")
 	if err != nil {
 		log.Print(err)

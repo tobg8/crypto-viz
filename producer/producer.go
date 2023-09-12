@@ -1,4 +1,4 @@
-package kafkaclient
+package producer
 
 import (
 	"encoding/json"
