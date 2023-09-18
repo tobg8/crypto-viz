@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/go-co-op/gocron"
 	"github.com/joho/godotenv"
+	"github.com/tobg8/crypto-viz/common"
 	"github.com/tobg8/crypto-viz/producer"
 	"github.com/tobg8/crypto-viz/scrapper"
 )
@@ -20,9 +22,6 @@ func Init() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-
-	// TODO CONSUMER
-	// init Consumer
 
 	// init producer
 	kafkaClient, err := producer.CreateProducer()
@@ -38,22 +37,56 @@ func Init() {
 	scheduler.StartBlocking()
 }
 
-// Scrap scraps currencies variations about top 100 crypto currencies.
+// Scrap scraps currencies variations
 func Scrap(kc *producer.KafkaClient) error {
-	currencies, err := scrapper.ScrapCurrencies("https://www.coingecko.com/fr")
-	if err != nil {
-		log.Print(err)
+	// Use a wait group to handle concurrent data fetching
+	var wg sync.WaitGroup
+
+	// Use channels to receive the results
+	currenciesCh := make(chan []common.CurrencyEvent)
+	newCurrenciesCh := make(chan []common.CurrencyEvent)
+
+	fetchCurrencies := func(url string, destCh chan<- []common.CurrencyEvent) {
+		defer wg.Done()
+		curr, err := scrapper.ScrapCurrencies(url)
+		if err != nil {
+			log.Printf("Error fetching currencies from %s: %v", url, err)
+			destCh <- nil
+			return
+		}
+		destCh <- curr
 	}
-	// create and send message with producer
-	err = kc.PushCurrencyEvents(currencies)
-	if err != nil {
+
+	fetchNewCurrencies := func(url string, destCh chan<- []common.CurrencyEvent) {
+		defer wg.Done()
+		newCurr, err := scrapper.ScrapNewCurrencies(url)
+		if err != nil {
+			log.Printf("Error fetching new currencies from %s: %v", url, err)
+			destCh <- nil
+			return
+		}
+		destCh <- newCurr
+	}
+
+	// Fetch currencies and newCurrencies
+	wg.Add(2)
+	go fetchCurrencies("https://www.coingecko.com/fr", currenciesCh)
+	go fetchNewCurrencies("https://www.coingecko.com/fr/new-cryptocurrencies", newCurrenciesCh)
+
+	go func() {
+		wg.Wait()
+		close(currenciesCh)
+		close(newCurrenciesCh)
+	}()
+
+	currencies := <-currenciesCh
+	newCurrencies := <-newCurrenciesCh
+
+	log.Print(currencies)
+	// Create and send messages with the producer
+	if err := kc.PushCurrencyEvents(newCurrencies); err != nil {
 		return fmt.Errorf("failed to push currency events: %w", err)
 	}
 
-	// newCurrencies, err := scrapper.ScrapNewCurrencies("https://www.coingecko.com/fr/new-cryptocurrencies")
-	// if err != nil {
-	// 	log.Print(err)
-	// }
-	// log.Printf("NEW CURRENCIES: %v", newCurrencies)
 	return nil
 }

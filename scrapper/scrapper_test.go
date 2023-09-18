@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/mock"
+	"github.com/tobg8/crypto-viz/common"
 	"gotest.tools/assert"
 )
 
@@ -13,33 +14,33 @@ type mockScraper struct {
 }
 
 // ScrapCurrencies is a mock implementation of the scraping function
-func (m *mockScraper) ScrapCurrencies(url string) ([]Currency, error) {
+func (m *mockScraper) ScrapCurrencies(url string) ([]common.Currency, error) {
 	args := m.Called(url)
-	return args.Get(0).([]Currency), args.Error(1)
+	return args.Get(0).([]common.Currency), args.Error(1)
 }
 
 // ScrapCurrencies is a mock implementation of the scraping function
-func (m *mockScraper) ScrapNewCurrencies(url string) ([]NewCurrency, error) {
+func (m *mockScraper) ScrapNewCurrencies(url string) ([]common.CurrencyEvent, error) {
 	args := m.Called(url)
-	return args.Get(0).([]NewCurrency), args.Error(1)
+	return args.Get(0).([]common.CurrencyEvent), args.Error(1)
 }
 
 func Test_ScrapCurrencies(t *testing.T) {
 	type test struct {
 		wantError bool
 		url       string
-		want      []Currency
+		want      []common.Currency
 		mockCall  func(m *mockScraper)
 	}
 
 	tests := map[string]test{
 		"unexpected length": {
 			url:  "https://www.coingecko.com/fr",
-			want: []Currency{},
+			want: []common.Currency{},
 			mockCall: func(m *mockScraper) {
 				m.On("ScrapCurrencies", "https://www.coingecko.com/fr").
 					Return(
-						[]Currency{}, errors.New("some error"),
+						[]common.Currency{}, errors.New("some error"),
 					)
 			},
 			wantError: true,
@@ -49,14 +50,14 @@ func Test_ScrapCurrencies(t *testing.T) {
 			mockCall: func(m *mockScraper) {
 				m.On("ScrapCurrencies", "hs://www.coingecko.com/fr").
 					Return(
-						[]Currency{}, errors.New("some error"),
+						[]common.Currency{}, errors.New("some error"),
 					)
 			},
 			wantError: true,
 		},
 		"nominal": {
 			url: "https://www.coingecko.com/fr",
-			want: []Currency{
+			want: []common.Currency{
 				{
 					ID:   "1",
 					Name: "MockCurrency1",
@@ -69,7 +70,7 @@ func Test_ScrapCurrencies(t *testing.T) {
 			mockCall: func(m *mockScraper) {
 				m.On("ScrapCurrencies", "https://www.coingecko.com/fr").
 					Return(
-						[]Currency{
+						[]common.Currency{
 							{
 								ID:   "1",
 								Name: "MockCurrency1",
@@ -109,7 +110,7 @@ func Test_ScrapNewCurrencies(t *testing.T) {
 	type test struct {
 		wantError bool
 		url       string
-		want      []NewCurrency
+		want      []common.CurrencyEvent
 		mockCall  func(m *mockScraper)
 	}
 
@@ -120,7 +121,7 @@ func Test_ScrapNewCurrencies(t *testing.T) {
 			mockCall: func(m *mockScraper) {
 				m.On("ScrapNewCurrencies", "https://www.coingecko.com/fr/new-cryptocurrencies").
 					Return(
-						[]NewCurrency{}, errors.New("some error"),
+						[]common.CurrencyEvent{}, errors.New("some error"),
 					)
 			},
 		},
@@ -130,14 +131,14 @@ func Test_ScrapNewCurrencies(t *testing.T) {
 			mockCall: func(m *mockScraper) {
 				m.On("ScrapNewCurrencies", "hps://www.coingecko.com/fr/new-cryptocurrencies").
 					Return(
-						[]NewCurrency{}, errors.New("some error"),
+						[]common.CurrencyEvent{}, errors.New("some error"),
 					)
 			},
 		},
 		"nominal": {
 			wantError: false,
 			url:       "https://www.coingecko.com/fr/new-cryptocurrencies",
-			want: []NewCurrency{
+			want: []common.CurrencyEvent{
 				{
 					Name: "MockCurrency1",
 				},
@@ -148,7 +149,7 @@ func Test_ScrapNewCurrencies(t *testing.T) {
 			mockCall: func(m *mockScraper) {
 				m.On("ScrapNewCurrencies", "https://www.coingecko.com/fr/new-cryptocurrencies").
 					Return(
-						[]NewCurrency{
+						[]common.CurrencyEvent{
 							{
 								Name: "MockCurrency1",
 							},

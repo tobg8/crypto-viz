@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/tobg8/crypto-viz/scrapper"
+	"github.com/tobg8/crypto-viz/common"
 )
 
 type KafkaClient struct {
@@ -25,7 +25,7 @@ func CreateProducer() (*KafkaClient, error) {
 	}, nil
 }
 
-func (kc KafkaClient) PushCurrencyEvents(currencies []scrapper.Currency) error {
+func (kc KafkaClient) PushCurrencyEvents(currencies []common.CurrencyEvent) error {
 	topic := "currencies_updates"
 	for i := 0; i < len(currencies); i++ {
 		currencyJSON, err := json.Marshal(currencies[i])
@@ -35,7 +35,7 @@ func (kc KafkaClient) PushCurrencyEvents(currencies []scrapper.Currency) error {
 
 		err = kc.Producer.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-			Key:            []byte(currencies[i].Name),
+			Key:            []byte(currencies[i].Name + " " + currencies[i].Acronym),
 			Value:          currencyJSON,
 		}, nil)
 		if err != nil {
