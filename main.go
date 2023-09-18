@@ -31,7 +31,7 @@ func Init() {
 
 	// init cron jobs
 	scheduler := gocron.NewScheduler(time.UTC)
-	scheduler.Every(30).Seconds().Do(func() {
+	scheduler.Every(10).Seconds().Do(func() {
 		Scrap(kafkaClient)
 	})
 	scheduler.StartBlocking()
@@ -82,9 +82,8 @@ func Scrap(kc *producer.KafkaClient) error {
 	currencies := <-currenciesCh
 	newCurrencies := <-newCurrenciesCh
 
-	log.Print(currencies)
 	// Create and send messages with the producer
-	if err := kc.PushCurrencyEvents(newCurrencies); err != nil {
+	if err := kc.PushCurrencyEvents(append(currencies, newCurrencies...)); err != nil {
 		return fmt.Errorf("failed to push currency events: %w", err)
 	}
 
