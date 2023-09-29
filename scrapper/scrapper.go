@@ -1,106 +1,86 @@
 package scrapper
 
 import (
+	"container/list"
 	"fmt"
-	"time"
+	"log"
+	"net/http"
 
-	"github.com/gocolly/colly"
+	"github.com/mmcdole/gofeed"
 	"github.com/tobg8/crypto-viz/common"
 )
 
-// ScrapCurrencies scraps currency information from "coingecko.com"
-func ScrapCurrencies(url string) ([]common.CurrencyEvent, error) {
-	c := colly.NewCollector()
-	c.UserAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.75 Safari/537.36"
-	c.AllowedDomains = []string{"www.coingecko.com"}
-	c.IgnoreRobotsTxt = false
+var maxCacheSize = 200 // Maximum number of article to keep in the cache
+var processedLinks = list.New()
 
-	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("Visiting", r.URL)
-	})
-
-	c.Limit(&colly.LimitRule{
-		DomainGlob:  "*",
-		Parallelism: 2,
-		Delay:       3 * time.Second,
-	})
-
-	c.OnError(func(r *colly.Response, err error) {
-		fmt.Println("Request URL:", r.Request.URL, "\nError:", err, r.StatusCode)
-	})
-
-	var currencies []common.Currency
-	var countCurrency int
-	// Create a Currency Object from each found rows
-	c.OnHTML(".coingecko-table .coin-table tbody", func(e *colly.HTMLElement) {
-		e.ForEach("tr", func(_ int, el *colly.HTMLElement) {
-			currency := common.Currency{
-				ID:            el.ChildText("td:nth-child(2)"),
-				Name:          el.ChildText("td:nth-child(3) span:first-child"),
-				Acronym:       el.ChildText("td:nth-child(3) span:nth-child(2)"),
-				Cours:         el.ChildText("td:nth-child(4)"),
-				Variation1h:   el.ChildText("td:nth-child(5)"),
-				Variation1d:   el.ChildText("td:nth-child(6)"),
-				Variation1w:   el.ChildText("td:nth-child(7)"),
-				Volume:        el.ChildText("td:nth-child(8)"),
-				MarketCapital: el.ChildText("td:nth-child(9)"),
-			}
-			currencies = append(currencies, currency)
-		})
-
-		countCurrency = e.DOM.Find("tr").Length()
-	})
-
-	c.Visit(url)
-
-	if len(currencies) != countCurrency {
-		return nil, fmt.Errorf("expected %d currencies but got %d", countCurrency, len(currencies))
+func isAlreadyProcessed(id string) bool {
+	// Check if the link is in the cache
+	for e := processedLinks.Front(); e != nil; e = e.Next() {
+		if e.Value.(string) == id {
+			return true
+		}
 	}
-
-	currenciesEvents, err := common.CurrenciesToCurrencyEvents(currencies)
-	if err != nil {
-		return nil, fmt.Errorf("could not convert Currency to CurrencyEvent: %w", err)
-	}
-	return currenciesEvents, nil
+	return false
 }
 
-// ScrapNewCurrenciesscraps currency information from newly trending crypto currencies.
-func ScrapNewCurrencies(url string) ([]common.CurrencyEvent, error) {
-	c := colly.NewCollector()
-	c.UserAgent = "Go scrapping"
-
-	var currencies []common.Currency
-	var countCurrency int
-
-	c.OnHTML(".coingecko-table .coin-table tbody", func(e *colly.HTMLElement) {
-		e.ForEach("tr", func(_ int, el *colly.HTMLElement) {
-			currency := common.Currency{
-				Name:        el.ChildText("td:nth-child(3) span:first-child"),
-				Acronym:     el.ChildText("td:nth-child(3) span:nth-child(2)"),
-				Cours:       el.ChildText("td:nth-child(4)"),
-				Chaine:      el.ChildText("td:nth-child(5)"),
-				Variation1h: el.ChildText("td:nth-child(6)"),
-				Variation1d: el.ChildText("td:nth-child(7)"),
-				Volume24d:   el.ChildText("td:nth-child(8)"),
-				FDV:         el.ChildText("td:nth-child(9)"),
-				LastAdded:   el.ChildText("td:nth-child(10)"),
-			}
-
-			currencies = append(currencies, currency)
-		})
-
-		countCurrency = e.DOM.Find("tr").Length()
-	})
-
-	c.Visit(url)
-
-	if len(currencies) != countCurrency {
-		return nil, fmt.Errorf("expected %d currencies but got %d", countCurrency, len(currencies))
+func addToCache(link string) {
+	// Check if the cache size exceeds the limit
+	if processedLinks.Len() >= maxCacheSize {
+		// Remove the oldest entry from the cache (the first one)
+		oldest := processedLinks.Front()
+		if oldest != nil {
+			processedLinks.Remove(oldest)
+		}
 	}
 
-	currenciesEvents, err := common.CurrenciesToCurrencyEvents(currencies)
+	// Add the new link to the cache (at the end)
+	processedLinks.PushBack(link)
+}
+
+func ScrapeRSSFeed(url string) ([]common.NewsEvent, error) {
+	// Fetch the RSS feed
+	response, err := http.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("could not convert newCurrency to CurrencyEvent: %w", err)
+		return nil, fmt.Errorf("failed to fetch RSS feed: %v", err)
 	}
-	return currenciesEvents, nil
+	defer response.Body.Close()
+
+	// Parse the RSS feed
+	fp := gofeed.NewParser()
+	feed, err := fp.Parse(response.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse RSS feed: %v", err)
+	}
+
+	var ne []common.NewsEvent
+	for _, item := range feed.Items {
+		// Check if the article's GUID has been processed before
+		if isAlreadyProcessed(item.GUID) {
+			log.Printf("already seen: %v", item.GUID)
+			continue
+		}
+
+		image := ""
+		if item.Image != nil {
+			image = item.Image.URL
+		}
+
+		event := common.NewsEvent{
+			ID:          item.GUID,
+			Title:       item.Title,
+			Link:        item.Link,
+			RssURL:      url,
+			ImageURL:    image,
+			Author:      item.Authors[0].Name,
+			PubDate:     *item.PublishedParsed,
+			Categories:  item.Categories,
+			Description: item.Description,
+		}
+
+		// Add the link to the cache
+		addToCache(item.GUID)
+		ne = append(ne, event)
+	}
+
+	return ne, nil
 }

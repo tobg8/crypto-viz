@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"sync"
 	"time"
 
 	"github.com/go-co-op/gocron"
@@ -31,7 +30,7 @@ func Init() {
 
 	// init cron jobs
 	scheduler := gocron.NewScheduler(time.UTC)
-	scheduler.Every(10).Seconds().Do(func() {
+	scheduler.Every(15).Seconds().Do(func() {
 		Scrap(kafkaClient)
 	})
 	scheduler.StartBlocking()
@@ -39,51 +38,20 @@ func Init() {
 
 // Scrap scraps currencies variations
 func Scrap(kc *producer.KafkaClient) error {
-	// Use a wait group to handle concurrent data fetching
-	var wg sync.WaitGroup
+	urls := []string{"https://cointelegraph.com/rss", "https://cryptoslate.com/feed/", "https://www.btcethereum.com/blog/feed/"}
+	var articleEvents []common.NewsEvent
 
-	// Use channels to receive the results
-	currenciesCh := make(chan []common.CurrencyEvent)
-	newCurrenciesCh := make(chan []common.CurrencyEvent)
-
-	fetchCurrencies := func(url string, destCh chan<- []common.CurrencyEvent) {
-		defer wg.Done()
-		curr, err := scrapper.ScrapCurrencies(url)
+	for _, v := range urls {
+		articles, err := scrapper.ScrapeRSSFeed(v)
 		if err != nil {
-			log.Printf("Error fetching currencies from %s: %v", url, err)
-			destCh <- nil
-			return
+			return fmt.Errorf("could not scrap articles: %w", err)
 		}
-		destCh <- curr
+		articleEvents = append(articleEvents, articles...)
 	}
-
-	fetchNewCurrencies := func(url string, destCh chan<- []common.CurrencyEvent) {
-		defer wg.Done()
-		newCurr, err := scrapper.ScrapNewCurrencies(url)
-		if err != nil {
-			log.Printf("Error fetching new currencies from %s: %v", url, err)
-			destCh <- nil
-			return
-		}
-		destCh <- newCurr
-	}
-
-	// Fetch currencies and newCurrencies
-	wg.Add(2)
-	go fetchCurrencies("https://www.coingecko.com/fr", currenciesCh)
-	go fetchNewCurrencies("https://www.coingecko.com/fr/new-cryptocurrencies", newCurrenciesCh)
-
-	go func() {
-		wg.Wait()
-		close(currenciesCh)
-		close(newCurrenciesCh)
-	}()
-
-	currencies := <-currenciesCh
-	newCurrencies := <-newCurrenciesCh
 
 	// Create and send messages with the producer
-	if err := kc.PushCurrencyEvents(append(currencies, newCurrencies...)); err != nil {
+	err := kc.PushArticlesEvents(articleEvents)
+	if err != nil {
 		return fmt.Errorf("failed to push currency events: %w", err)
 	}
 

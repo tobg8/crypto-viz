@@ -3,7 +3,7 @@ package producer
 import (
 	"encoding/json"
 	"fmt"
-	"os"
+	"log"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/tobg8/crypto-viz/common"
@@ -16,8 +16,7 @@ type KafkaClient struct {
 func CreateProducer() (*KafkaClient, error) {
 	p, err := kafka.NewProducer(getKafkaConf())
 	if err != nil {
-		fmt.Printf("Failed to create producer: %s\n", err)
-		os.Exit(1)
+		return nil, fmt.Errorf("failed to create producer: %w", err)
 	}
 
 	return &KafkaClient{
@@ -25,24 +24,31 @@ func CreateProducer() (*KafkaClient, error) {
 	}, nil
 }
 
-func (kc KafkaClient) PushCurrencyEvents(currencies []common.CurrencyEvent) error {
-	topic := "currencies_updates"
-	for i := 0; i < len(currencies); i++ {
-		currencyJSON, err := json.Marshal(currencies[i])
+func (kc KafkaClient) PushArticlesEvents(events []common.NewsEvent) error {
+	topic := "news"
+
+	if len(events) == 0 {
+		log.Print("0 articles to push")
+		return nil
+	}
+
+	for i := 0; i < len(events); i++ {
+		articlesJSON, err := json.Marshal(events[i])
 		if err != nil {
-			return fmt.Errorf("failed to marshal currency to JSON: %w", err)
+			return fmt.Errorf("failed to marshal events to JSON: %w", err)
 		}
 
 		err = kc.Producer.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-			Key:            []byte(currencies[i].Name + " " + currencies[i].Acronym),
-			Value:          currencyJSON,
+			Key:            []byte(events[i].ID + " " + events[i].Title),
+			Value:          articlesJSON,
 		}, nil)
 		if err != nil {
 			return fmt.Errorf("failed to produce kafka message: %w", err)
 		}
 	}
 	kc.Producer.Flush(15 * 1000)
-	fmt.Printf("%v currencies events sent \n", len(currencies))
+	log.Printf("%v articles events sent \n", len(events))
+
 	return nil
 }

@@ -1,35 +1,15 @@
 package common
 
-// Currency represents a currency model
-type Currency struct {
-	ID            string
-	Name          string
-	Acronym       string
-	Cours         string
-	Variation1h   string
-	Variation1d   string
-	Variation1w   string
-	Volume        string
-	MarketCapital string
-	Chaine        string
-	Volume24d     string
-	FDV           string
-	LastAdded     string
-}
+import "time"
 
-// CurrencyEvent represents a currency kafka model event
-type CurrencyEvent struct {
-	ID            int
-	Name          string
-	Acronym       string
-	Cours         float64
-	Variation1h   float64
-	Variation1d   float64
-	Variation1w   float64
-	Volume        float64
-	MarketCapital float64
-	Chaine        string
-	Volume24d     float64
-	FDV           float64
-	LastAdded     string
+type NewsEvent struct {
+	ID          string    `json:"id"`
+	RssURL      string    `json:"rss_url"`
+	Title       string    `json:"title"`
+	Link        string    `json:"link"`
+	ImageURL    string    `json:"image_url"`
+	PubDate     time.Time `json:"publication_date"`
+	Author      string    `json:"author"`
+	Categories  []string  `json:"categories"`
+	Description string    `json:"description"`
 }
