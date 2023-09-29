@@ -12,18 +12,16 @@ func CurrenciesToCurrencyEvents(currencies []Currency) ([]CurrencyEvent, error) 
 		mkCap := splitText(v.MarketCapital, 1)
 		volume24 := splitText(v.Volume24d, 1)
 		fdv := splitText(v.FDV, 1)
-
 		currenciesEvent = append(currenciesEvent,
 			CurrencyEvent{
 				ID:            stringToInt(v.ID),
 				Name:          v.Name,
-				Acronym:       v.Acronym,
 				Cours:         stringToFloat(cours),
 				Variation1h:   stringToFloat(var1h),
 				Variation1d:   stringToFloat(var1d),
 				Variation1w:   stringToFloat(var1w),
-				Volume:        stringToFloat(volume),
 				MarketCapital: stringToFloat(mkCap),
+				Volume:        stringToFloat(volume),
 				Chaine:        v.Chaine,
 				Volume24d:     stringToFloat(volume24),
 				FDV:           stringToFloat(fdv),
