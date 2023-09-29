@@ -2,6 +2,7 @@ package scrapper
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/gocolly/colly"
 	"github.com/tobg8/crypto-viz/common"
@@ -10,11 +11,26 @@ import (
 // ScrapCurrencies scraps currency information from "coingecko.com"
 func ScrapCurrencies(url string) ([]common.CurrencyEvent, error) {
 	c := colly.NewCollector()
-	c.UserAgent = "Go scraping"
+	c.UserAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.75 Safari/537.36"
+	c.AllowedDomains = []string{"www.coingecko.com"}
+	c.IgnoreRobotsTxt = false
+
+	c.OnRequest(func(r *colly.Request) {
+		fmt.Println("Visiting", r.URL)
+	})
+
+	c.Limit(&colly.LimitRule{
+		DomainGlob:  "*",
+		Parallelism: 2,
+		Delay:       3 * time.Second,
+	})
+
+	c.OnError(func(r *colly.Response, err error) {
+		fmt.Println("Request URL:", r.Request.URL, "\nError:", err, r.StatusCode)
+	})
 
 	var currencies []common.Currency
 	var countCurrency int
-
 	// Create a Currency Object from each found rows
 	c.OnHTML(".coingecko-table .coin-table tbody", func(e *colly.HTMLElement) {
 		e.ForEach("tr", func(_ int, el *colly.HTMLElement) {
