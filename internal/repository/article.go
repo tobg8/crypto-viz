@@ -33,7 +33,7 @@ func (kc KafkaClient) PushArticles(a []common.ArticleEvent) error {
 	}
 
 	kc.Producer.Flush(15 * 1000)
-	fmt.Printf("%v article events sent \n", len(a))
+	log.Printf("%v article events sent \n", len(a))
 	return nil
 }
 
@@ -43,7 +43,8 @@ func FetchArticles() *[]common.ArticleAPI {
 	baseURL := "https://cryptopanic.com/api/v1/posts/?auth_token=c1b068d015189cba73a935bb42c06128b4c3e5f6"
 	resp, err := http.Get(baseURL)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("could not get url: %v", baseURL)
+		return &response.Results
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
@@ -56,6 +57,5 @@ func FetchArticles() *[]common.ArticleAPI {
 		log.Fatal(err)
 	}
 
-	log.Print(&response.Results)
 	return &response.Results
 }
