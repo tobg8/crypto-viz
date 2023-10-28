@@ -9,7 +9,7 @@ import (
 	"github.com/tobg8/crypto-viz/internal/repository"
 )
 
-var lastURL string // Declare a variable to store the last slug
+var lastURL string
 
 // HandleNews will fetch news from API transform and send them through kafka
 func HandleNews(k *repository.KafkaClient) error {
@@ -33,7 +33,7 @@ func HandleNews(k *repository.KafkaClient) error {
 	// Push News
 	err := k.PushArticles(newEvents)
 	if err != nil {
-		return fmt.Errorf("could not send news")
+		return fmt.Errorf("could not send news: %w", err)
 	}
 
 	return nil
@@ -58,7 +58,6 @@ func filterSentEvents(ae []common.ArticleEvent, url *string) []common.ArticleEve
 func transformArticleToEvent(a common.ArticleAPI) common.ArticleEvent {
 	currencies := TransformCurrency(a.Currencies)
 	return common.ArticleEvent{
-		ID:          a.ID,
 		Kind:        a.Kind,
 		Source:      a.SourceAPI.Domain,
 		Title:       a.Title,

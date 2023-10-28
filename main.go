@@ -28,8 +28,9 @@ func Init() {
 
 	// init cron jobs
 	scheduler := gocron.NewScheduler(time.UTC)
-	scheduler.Every(30).Seconds().Do(func() {
+	scheduler.Every(1).Minutes().Do(func() {
 		usecase.HandleNews(kafkaClient)
+		usecase.HandleListing(kafkaClient)
 	})
 	scheduler.StartBlocking()
 }
