@@ -46,6 +46,7 @@ func TestFiltrerSentEvent(t *testing.T) {
 		out := filterSentEvents(in, &slug)
 		assert.Equal(t, expect, out)
 	})
+
 	t.Run("when slug is present", func(t *testing.T) {
 		in := []common.ArticleEvent{
 			{
@@ -74,12 +75,10 @@ func TestFiltrerSentEvent(t *testing.T) {
 		out := filterSentEvents(in, &slug)
 		assert.Equal(t, expect, out)
 	})
-
 }
 
 func TestTransformArticleToEvent(t *testing.T) {
 	in := common.ArticleAPI{
-		ID:   12,
 		Kind: "media",
 		SourceAPI: common.SourceAPI{
 			Title:  "source title",
@@ -108,7 +107,6 @@ func TestTransformArticleToEvent(t *testing.T) {
 	}
 
 	expect := common.ArticleEvent{
-		ID:     12,
 		Kind:   "media",
 		Source: "kia.com",
 		Title:  "title",
