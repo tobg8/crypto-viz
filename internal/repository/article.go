@@ -24,7 +24,7 @@ func (kc KafkaClient) PushArticles(a []common.ArticleEvent) error {
 
 		err = kc.Producer.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-			Key:            []byte(a[i].Title),
+			Key:            []byte("articles:" + a[i].Title),
 			Value:          article,
 		}, nil)
 		if err != nil {
