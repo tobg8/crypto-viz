@@ -21,7 +21,7 @@ func (kc KafkaClient) PushListing(a []common.Listing) error {
 
 		err = kc.Producer.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-			Key:            []byte(a[i].Name),
+			Key:            []byte("listing:" + a[i].Name),
 			Value:          article,
 		}, nil)
 		if err != nil {
