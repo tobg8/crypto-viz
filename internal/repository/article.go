@@ -15,7 +15,7 @@ type KafkaClient struct {
 }
 
 func (kc KafkaClient) PushArticles(a []common.ArticleEvent) error {
-	topic := "news"
+	topic := "articles"
 	for i := 0; i < len(a); i++ {
 		article, err := json.Marshal(a[i])
 		if err != nil {
