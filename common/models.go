@@ -45,7 +45,7 @@ type CurrencyEvent struct {
 	Title string `json:"title"`
 }
 
-type Listing struct {
+type ListingEvent struct {
 	ID                           string    `json:"id"`
 	Symbol                       string    `json:"symbol"`
 	Name                         string    `json:"name"`

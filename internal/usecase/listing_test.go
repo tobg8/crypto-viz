@@ -9,7 +9,7 @@ import (
 
 func TestIsListingNew(t *testing.T) {
 	t.Run("when listing is not new", func(t *testing.T) {
-		in := []common.Listing{
+		in := []common.ListingEvent{
 			{
 				CurrentPrice: 1292.921,
 				Symbol:       "hello",
@@ -31,7 +31,7 @@ func TestIsListingNew(t *testing.T) {
 		assert.Equal(t, expect, out)
 	})
 	t.Run("when listing is new", func(t *testing.T) {
-		in := []common.Listing{
+		in := []common.ListingEvent{
 			{
 				CurrentPrice: 1292.921,
 				Symbol:       "hello",
