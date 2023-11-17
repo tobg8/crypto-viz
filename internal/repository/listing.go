@@ -11,7 +11,7 @@ import (
 	"github.com/tobg8/crypto-viz/common"
 )
 
-func (kc KafkaClient) PushListing(a []common.Listing) error {
+func (kc KafkaClient) PushListing(a []common.ListingEvent) error {
 	topic := "listing"
 	for i := 0; i < len(a); i++ {
 		article, err := json.Marshal(a[i])
@@ -34,14 +34,14 @@ func (kc KafkaClient) PushListing(a []common.Listing) error {
 	return nil
 }
 
-func FetchListing() *[]common.Listing {
+func FetchListing() *[]common.ListingEvent {
 	client := &http.Client{}
 	apiKey := os.Getenv("COINGECKO_KEY")
 	baseURL := "https://api.coingecko.com/api/v3/coins/markets?vs_currency=eur&order=market_cap_desc&per_page=250&locale=fr"
 	req, err := http.NewRequest("GET", baseURL, nil)
 	req.Header.Set("X-CG-Demo-API-Key", apiKey)
 
-	var response []common.Listing
+	var response []common.ListingEvent
 	if err != nil {
 		log.Printf("could not create request: %v", err)
 		return &response

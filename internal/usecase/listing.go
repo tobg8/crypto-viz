@@ -32,6 +32,6 @@ func HandleListing(k *repository.KafkaClient) error {
 }
 
 // isListingNew returns whether the listing has already been processed
-func isListingNew(l []common.Listing, price *float64) bool {
+func isListingNew(l []common.ListingEvent, price *float64) bool {
 	return l[0].CurrentPrice != *price
 }
