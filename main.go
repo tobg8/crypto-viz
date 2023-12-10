@@ -26,15 +26,21 @@ func Init() {
 		log.Print(err)
 	}
 
-	isListingDone := false
+	// isListingDone := false
 	// init cron jobs
 	scheduler := gocron.NewScheduler(time.UTC)
-	scheduler.Every(3).Minutes().Do(func() {
-		if isListingDone {
-			usecase.HandleNews(kafkaClient)
+	scheduler.Every(1).Minutes().Do(func() {
+		log.Print("here we go")
+		// isListingDone = true
+		// if isListingDone {
+		// 	usecase.HandleNews(kafkaClient)
+		err := usecase.HandlePrices(kafkaClient)
+		if err != nil {
+			log.Print(err)
 		}
-		usecase.HandleListing(kafkaClient)
-		isListingDone = true
+		// }
+		// usecase.HandleListing(kafkaClient)
+
 	})
 	scheduler.StartBlocking()
 }

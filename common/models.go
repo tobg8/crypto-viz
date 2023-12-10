@@ -1,6 +1,9 @@
 package common
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type ArticleResponse struct {
 	Results []ArticleAPI `json:"results"`
@@ -71,4 +74,28 @@ type ListingEvent struct {
 	AtlChangePercentage          float64   `json:"atl_change_percentage"`
 	AtlDate                      time.Time `json:"atl_date"`
 	LastUpdated                  time.Time `json:"last_updated"`
+}
+
+type PriceAPI struct {
+	Prices       []json.RawMessage `json:"prices"`
+	MarketCaps   []json.RawMessage `json:"market_caps"`
+	TotalVolumes []json.RawMessage `json:"total_volumes"`
+}
+
+type PriceUnitAPI struct {
+	Timestamp int64
+	Value     float64
+}
+
+type PriceResponseAPI struct {
+	Prices       []PriceUnitAPI `json:"prices"`
+	MarketCaps   []PriceUnitAPI `json:"market_caps"`
+	TotalVolumes []PriceUnitAPI `json:"total_volumes"`
+}
+
+type PriceEvent struct {
+	PriceUnitAPI
+	Type     string
+	Range    string
+	Currency string
 }
