@@ -2,43 +2,49 @@ package usecase
 
 import (
 	"fmt"
+	"log"
 	"sort"
 
 	"github.com/tobg8/crypto-viz/common"
 	"github.com/tobg8/crypto-viz/internal/repository"
 )
 
-var last1DTimeStamp int64
-var last90DTimeStamp int64
-var lastALLimeStamp int64
+var Maped map[string]int64
+
+func InitMapPrice() {
+	// Initialize the map before using it
+	Maped = make(map[string]int64)
+}
 
 func HandlePrices(k *repository.KafkaClient) error {
-	// Je veux récupérer la currency et la range
-
-	// Je veux vérifier que la cuurrency et la range existe
-
+	log.Print("new prices")
 	// Je veux appeler ma func repo qui récup les prix en passant range et currency
-	currency := "bitcoin"
+	currencies := repository.FetchListing()
+	// Je les sauvegarde
+	for _, v := range *currencies {
+		if _, ok := Maped[v.ID+"1D"]; !ok {
+			Maped[v.ID+"1D"] = 0
+		}
+	}
 
-	// Je dois faire 3 appels, 1 appel 1D, un appel 89 days, et un appel +90j
-	_, err := handle1DPrice(k, currency)
-	if err != nil {
-		return err
-	}
-	_, err = handle90Price(k, currency)
-	if err != nil {
-		return err
-	}
-	_, err = handleAllPrice(k, currency)
-	if err != nil {
-		return err
+	for i, v := range *currencies {
+		// Pour l'instant on gère 10 currencies en One day
+		// Parce que on prends de temps que les 5 mins de la routine
+		if i == 11 {
+			return nil
+		}
+		_, err := handle1DPrice(k, v.ID)
+		if err != nil {
+			log.Print(err)
+			continue
+		}
 	}
 
 	return nil
 }
 
-func transformToEvent(prices *common.PriceResponseAPI, r string, currency string) []common.PriceEvent {
-	var response []common.PriceEvent
+func transformToEvent(prices *common.PriceResponseAPI, r string, currency string) common.PriceEventTest {
+	var response common.PriceEventTest
 	for _, v := range prices.Prices {
 		if len(prices.Prices) > 0 {
 			temp := common.PriceEvent{
@@ -47,7 +53,7 @@ func transformToEvent(prices *common.PriceResponseAPI, r string, currency string
 				Range:        r,
 				Currency:     currency,
 			}
-			response = append(response, temp)
+			response.Prices = append(response.Prices, temp)
 		}
 	}
 
@@ -59,7 +65,7 @@ func transformToEvent(prices *common.PriceResponseAPI, r string, currency string
 				Range:        r,
 				Currency:     currency,
 			}
-			response = append(response, temp)
+			response.TotalVolumes = append(response.TotalVolumes, temp)
 		}
 	}
 
@@ -71,36 +77,11 @@ func transformToEvent(prices *common.PriceResponseAPI, r string, currency string
 				Range:        r,
 				Currency:     currency,
 			}
-			response = append(response, temp)
+			response.MarketCaps = append(response.MarketCaps, temp)
 		}
 	}
 
 	return response
-}
-
-func handleAllPrice(k *repository.KafkaClient, currency string) (*common.PriceResponseAPI, error) {
-	prices := k.FetchPrices(currency, "300")
-	if prices == nil {
-		return nil, fmt.Errorf("error when fetching prices ALL")
-	}
-	// Je veux trier mes arrays par timestamp,
-	sortPricesByTimeStamp(prices)
-
-	if lastALLimeStamp == prices.Prices[0].Timestamp {
-		return nil, fmt.Errorf("no new prices to send on ALL")
-	}
-	// J'enlève ceux qui sont plus grands
-	removeOlderValues(lastALLimeStamp, prices)
-
-	// Je set le lastTimeStamp avec le plus récent
-	lastALLimeStamp = prices.Prices[0].Timestamp
-
-	eventALL := transformToEvent(prices, "ALL", currency)
-	err := k.PushPrices(eventALL, "ALL")
-	if err != nil {
-		return nil, fmt.Errorf("could not send prices on ALL: %w", err)
-	}
-	return prices, nil
 }
 
 func handle1DPrice(k *repository.KafkaClient, currency string) (*common.PriceResponseAPI, error) {
@@ -111,44 +92,22 @@ func handle1DPrice(k *repository.KafkaClient, currency string) (*common.PriceRes
 	// Je veux trier mes arrays par timestamp,
 	sortPricesByTimeStamp(prices)
 
-	if last1DTimeStamp == prices.Prices[0].Timestamp {
+	// Check if the stored timestamp for the currency is equal to or older than the latest timestamp
+	if storedTimestamp, ok := Maped[currency+"1D"]; ok && storedTimestamp >= prices.Prices[0].Timestamp {
 		return nil, fmt.Errorf("no new prices to send on 1D")
 	}
+
 	// J'enlève ceux qui sont plus grands
-	removeOlderValues(last1DTimeStamp, prices)
+	removeOlderValues(Maped[currency+"1D"], prices)
 
 	// Je set le lastTimeStamp avec le plus récent
-	last1DTimeStamp = prices.Prices[0].Timestamp
+	Maped[currency+"1D"] = prices.Prices[0].Timestamp
 
 	event1D := transformToEvent(prices, "1D", currency)
 
-	err := k.PushPrices(event1D, "1D")
+	err := k.PushPrices(event1D, "1D", currency)
 	if err != nil {
 		return nil, fmt.Errorf("could not send prices on 1D: %w", err)
-	}
-	return prices, nil
-}
-
-func handle90Price(k *repository.KafkaClient, currency string) (*common.PriceResponseAPI, error) {
-	prices := k.FetchPrices(currency, "89")
-	if prices == nil {
-		return nil, fmt.Errorf("error when fetching prices on 90D")
-	}
-	// Je veux trier mes arrays par timestamp,
-	sortPricesByTimeStamp(prices)
-
-	if last90DTimeStamp == prices.Prices[0].Timestamp {
-		return nil, fmt.Errorf("no new prices to send on 90D")
-	}
-	// J'enlève ceux qui sont plus grands
-	removeOlderValues(last90DTimeStamp, prices)
-
-	// Je set le lastTimeStamp avec le plus récent
-	last90DTimeStamp = prices.Prices[0].Timestamp
-	event90D := transformToEvent(prices, "90D", currency)
-	err := k.PushPrices(event90D, "90D")
-	if err != nil {
-		return nil, fmt.Errorf("could not send prices on 90D: %w", err)
 	}
 	return prices, nil
 }

@@ -99,3 +99,10 @@ type PriceEvent struct {
 	Range    string
 	Currency string
 }
+
+type PriceEventTest struct {
+	Prices       []PriceEvent `json:"prices"`
+	MarketCaps   []PriceEvent `json:"market_caps"`
+	TotalVolumes []PriceEvent `json:"total_volumes"`
+	Currency     string       `json:"currency"`
+}

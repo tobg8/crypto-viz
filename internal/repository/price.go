@@ -81,25 +81,25 @@ func processRawMessages(rawMessages []json.RawMessage) ([]common.PriceUnitAPI, e
 	return result, nil
 }
 
-func (kc KafkaClient) PushPrices(p []common.PriceEvent, r string) error {
+func (kc KafkaClient) PushPrices(p common.PriceEventTest, r string, c string) error {
 	topic := "prices"
-	for i := 0; i < len(p); i++ {
-		price, err := json.Marshal(p[i])
-		if err != nil {
-			return fmt.Errorf("failed to marshal articles to JSON: %w", err)
-		}
 
-		err = kc.Producer.Produce(&kafka.Message{
-			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-			Key:            []byte("price:" + p[i].Currency),
-			Value:          price,
-		}, nil)
-		if err != nil {
-			return fmt.Errorf("failed to produce kafka message: %w", err)
-		}
+	price, err := json.Marshal(p)
+	if err != nil {
+		return fmt.Errorf("failed to marshal articles to JSON: %w", err)
+	}
+
+	err = kc.Producer.Produce(&kafka.Message{
+		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
+		Key:            []byte("price:" + p.Currency),
+		Value:          price,
+	}, nil)
+
+	if err != nil {
+		return fmt.Errorf("failed to produce kafka message: %w", err)
 	}
 
 	kc.Producer.Flush(15 * 1000)
-	log.Printf("%v prices in listing sent on range %v \n", len(p), r)
+	log.Printf("prices in listing sent on range %v and crypto %v \n", r, c)
 	return nil
 }

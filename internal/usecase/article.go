@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/tobg8/crypto-viz/common"
@@ -46,7 +45,6 @@ func filterSentEvents(ae []common.ArticleEvent, url *string) []common.ArticleEve
 		if event.URL != *url {
 			newEvents = append(newEvents, event)
 		} else {
-			log.Print("There is no articles to send yet")
 			break
 		}
 	}
