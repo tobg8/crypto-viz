@@ -15,6 +15,8 @@ func main() {
 }
 
 func Init() {
+	usecase.InitMapPrice()
+
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -29,11 +31,21 @@ func Init() {
 	isListingDone := false
 	// init cron jobs
 	scheduler := gocron.NewScheduler(time.UTC)
-	scheduler.Every(3).Minutes().Do(func() {
+	scheduler.Every(5).Minutes().Do(func() {
 		if isListingDone {
 			usecase.HandleNews(kafkaClient)
+			if err != nil {
+				log.Print(err)
+			}
+			usecase.HandlePrices(kafkaClient)
+			if err != nil {
+				log.Print(err)
+			}
 		}
 		usecase.HandleListing(kafkaClient)
+		if err != nil {
+			log.Print(err)
+		}
 		isListingDone = true
 	})
 	scheduler.StartBlocking()
