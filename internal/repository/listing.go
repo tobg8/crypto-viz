@@ -37,7 +37,7 @@ func (kc KafkaClient) PushListing(a []common.ListingEvent) error {
 func FetchListing() *[]common.ListingEvent {
 	client := &http.Client{}
 	apiKey := os.Getenv("COINGECKO_KEY")
-	baseURL := "https://api.coingecko.com/api/v3/coins/markets?vs_currency=eur&order=market_cap_desc&per_page=250&locale=fr"
+	baseURL := "https://api.coingecko.com/api/v3/coins/markets?vs_currency=eur&order=market_cap_desc&per_page=100&locale=fr"
 	req, err := http.NewRequest("GET", baseURL, nil)
 	req.Header.Set("X-CG-Demo-API-Key", apiKey)
 
