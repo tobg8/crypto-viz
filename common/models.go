@@ -105,4 +105,33 @@ type PriceEventTest struct {
 	MarketCaps   []PriceEvent `json:"market_caps"`
 	TotalVolumes []PriceEvent `json:"total_volumes"`
 	Currency     string       `json:"currency"`
+	Range        string       `json:"range"`
+}
+
+type OhlcAPI struct {
+	Ohlc [][]json.RawMessage `json:"ohlc"`
+}
+
+type OhlcUnit struct {
+	Timestamp int64   `json:"timestamp"`
+	Open      float64 `json:"open"`
+	Low       float64 `json:"low"`
+	High      float64 `json:"high"`
+	Close     float64 `json:"close"`
+}
+
+type OhlcResponseAPI struct {
+	Ohlc []OhlcUnit `json:"ohlc"`
+}
+
+type OhlcEvent struct {
+	OhlcUnit
+	Range    string `json:"range"`
+	Currency string `json:"currency"`
+}
+
+type OhlcResponseTest struct {
+	Ohlc     []OhlcEvent
+	Currency string `json:"currency"`
+	Range    string `json:"range"`
 }

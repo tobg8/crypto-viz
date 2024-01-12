@@ -36,7 +36,7 @@ func HandlePrices(k *repository.KafkaClient) error {
 		_, err := handle1DPrice(k, v.ID)
 		if err != nil {
 			log.Print(err)
-			continue
+			return nil
 		}
 	}
 
@@ -56,31 +56,7 @@ func transformToEvent(prices *common.PriceResponseAPI, r string, currency string
 			response.Prices = append(response.Prices, temp)
 		}
 	}
-
-	for _, v := range prices.TotalVolumes {
-		if len(prices.Prices) > 0 {
-			temp := common.PriceEvent{
-				PriceUnitAPI: v,
-				Type:         "total_volumes",
-				Range:        r,
-				Currency:     currency,
-			}
-			response.TotalVolumes = append(response.TotalVolumes, temp)
-		}
-	}
-
-	for _, v := range prices.MarketCaps {
-		if len(prices.Prices) > 0 {
-			temp := common.PriceEvent{
-				PriceUnitAPI: v,
-				Type:         "market_caps",
-				Range:        r,
-				Currency:     currency,
-			}
-			response.MarketCaps = append(response.MarketCaps, temp)
-		}
-	}
-
+	response.Currency = currency
 	return response
 }
 

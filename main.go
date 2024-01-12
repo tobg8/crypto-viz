@@ -16,6 +16,7 @@ func main() {
 
 func Init() {
 	usecase.InitMapPrice()
+	usecase.InitMapOhlc()
 
 	err := godotenv.Load()
 	if err != nil {
@@ -37,7 +38,7 @@ func Init() {
 
 	// init cron jobs
 	scheduler := gocron.NewScheduler(time.UTC)
-	scheduler.Every(5).Minutes().Do(func() {
+	scheduler.Every(6).Minutes().Do(func() {
 
 		usecase.HandleNews(kafkaClient)
 		if err != nil {
@@ -47,9 +48,13 @@ func Init() {
 		if err != nil {
 			log.Print(err)
 		}
+		usecase.HandleOhlc(kafkaClient)
+		if err != nil {
+			log.Print(err)
+		}
 	})
 
-	scheduler.Every(1).Minute().Do(func() {
+	scheduler.Every(2).Minute().Do(func() {
 		usecase.HandleListing(kafkaClient)
 		if err != nil {
 			log.Print(err)
