@@ -37,18 +37,6 @@ func (kc KafkaClient) FetchPrices(currency string, rangeCurrency string) *common
 		log.Fatal(err)
 	}
 
-	// Process MarketCaps
-	response.MarketCaps, err = processRawMessages(tempResp.MarketCaps)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Process TotalVolumes
-	response.TotalVolumes, err = processRawMessages(tempResp.TotalVolumes)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	return &response
 }
 
@@ -100,6 +88,6 @@ func (kc KafkaClient) PushPrices(p common.PriceEventTest, r string, c string) er
 	}
 
 	kc.Producer.Flush(15 * 1000)
-	log.Printf("prices in listing sent on range %v and crypto %v \n", r, c)
+	log.Printf("%v prices in listing sent on range %v and crypto %v \n", len(p.Prices), r, c)
 	return nil
 }
