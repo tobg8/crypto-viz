@@ -38,12 +38,7 @@ func Init() {
 
 	// init cron jobs
 	scheduler := gocron.NewScheduler(time.UTC)
-	scheduler.Every(6).Minutes().Do(func() {
-
-		usecase.HandleNews(kafkaClient)
-		if err != nil {
-			log.Print(err)
-		}
+	scheduler.Every(10).Minutes().Do(func() {
 		usecase.HandlePrices(kafkaClient)
 		if err != nil {
 			log.Print(err)
@@ -54,8 +49,12 @@ func Init() {
 		}
 	})
 
-	scheduler.Every(2).Minute().Do(func() {
+	scheduler.Every(5).Minute().Do(func() {
 		usecase.HandleListing(kafkaClient)
+		if err != nil {
+			log.Print(err)
+		}
+		usecase.HandleNews(kafkaClient)
 		if err != nil {
 			log.Print(err)
 		}
